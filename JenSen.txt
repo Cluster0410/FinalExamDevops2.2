@@ -1,0 +1,82 @@
+pipeline {
+    agent { label 'aws' }
+    environment {
+        TOKENAWS = credentials('controller-ssh-key')
+        TEST_RESULT_FILE = 'test_result.txt' // File to store test result
+    }
+    stages {
+        stage('Deploy to Testing') {
+            steps {
+                sh 'ssh -T -oStrictHostKeyChecking=no -i "$TOKENAWS" ec2-user@54.160.4.233 "sudo dnf update; sudo dnf install git -y; sudo dnf install -y httpd; sudo systemctl start httpd; sudo rm -Rf /var/www/html/; sudo git clone https://github.com/Cluster0410/FinalExamDevops2.2 /var/www/html"'
+            script{
+                try{
+                    //Install Selenium webdriver
+                    sh 'npm install selenium-webdriver'
+                    
+                    //Run the test and capture the output
+                    def output = sh(script: 'node test/test1.js', returnStdout: true).trim()
+
+                    //Debugging printing the output
+                    echo "Test Output: ${output}"
+
+                    //Write the result to a file
+
+                    if(output.contains('Test Success')){
+                        writeFile file: env.TEST_RESULT_FILE, text: 'true'
+                    }else{
+                        writeFile file: env.TEST_RESULT_FILE, text: 'false'
+                    }
+                }catch (Exception e) {
+                    echo "Test failed: ${e.message}"
+                    writeFile file: env.TEST_RESULT_FILE, text: 'false'
+                    
+                }
+            }
+             }
+        } 
+        stage('Deploy to Staging') {
+            
+             when{
+               expression {
+                 // Read the test result from the file id true continue
+                def testResult = readFile(env.TEST_RESULT_FILE).trim()
+                return testResult == 'true'
+                }           
+             }
+
+            steps {
+                sh 'ssh -T -oStrictHostKeyChecking=no -i "$TOKENAWS" ec2-user@3.228.0.120 "sudo dnf update; sudo dnf install git -y; sudo dnf install -y httpd; sudo systemctl start httpd; sudo rm -Rf /var/www/html/; sudo git clone https://github.com/Cluster0410/FinalExamDevops2.2 /var/www/html"'
+            }
+        }
+        
+        stage('Deploy to Production_Env1') {
+            
+            when{
+               expression {
+                 // Read the test result from the file id true continue
+                def testResult = readFile(env.TEST_RESULT_FILE).trim()
+                return testResult == 'true'
+                }           
+             }
+            
+            steps {
+                sh 'ssh -T -oStrictHostKeyChecking=no -i "$TOKENAWS" ec2-user@3.90.168.166 "sudo dnf update; sudo dnf install git -y; sudo dnf install -y httpd; sudo systemctl start httpd; sudo rm -Rf /var/www/html/; sudo git clone https://github.com/Cluster0410/FinalExamDevops2.2 /var/www/html"'
+            }
+        }
+        
+        stage('Deploy to Production_Env2') {
+
+            when{
+               expression {
+                 // Read the test result from the file id true continue
+                def testResult = readFile(env.TEST_RESULT_FILE).trim()
+                return testResult == 'true'
+                }           
+             }
+
+            steps {
+                sh 'ssh -T -oStrictHostKeyChecking=no -i "$TOKENAWS" ec2-user@44.200.108.228 "sudo dnf update; sudo dnf install git -y; sudo dnf install -y httpd; sudo systemctl start httpd; sudo rm -Rf /var/www/html/; sudo git clone https://github.com/Cluster0410/FinalExamDevops2.2 /var/www/html"'
+            }
+        }
+    }
+}
