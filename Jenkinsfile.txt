@@ -1,0 +1,30 @@
+pipeline{
+    agent { label 'aws' }
+    environment{
+        TOKENAWS = credentials('controller-ssh-key')
+    }
+    stages{ 
+        stage('Deploy to Testing'){
+            steps{
+            sh 'ssh -T -oStrictHostKeyChecking=no -i "$TOKENAWS" ec2-user@54.160.4.233 " sudo dnf update; sudo dnf install git -y; sudo dnf install -y httpd; sudo systemctl start httpd; sudo rm -Rf /var/www/html/; sudo git clone https://github.com/Cluster0410/FinalExamDevops2.2 /var/www/html"'
+            }
+            
+        }
+        stage('Deploy to Staging'){
+            steps{
+            sh 'ssh -T -oStrictHostKeyChecking=no -i "$TOKENAWS" ec2-user@3.228.0.120 " sudo dnf update; sudo dnf install git -y; sudo dnf install -y httpd; sudo systemctl start httpd; sudo rm -Rf /var/www/html/; sudo git clone https://github.com/Cluster0410/FinalExamDevops2.2 /var/www/html"'
+            }
+        }
+        stage('Deploy to Production_Env1'){
+            steps{
+            sh 'ssh -T -oStrictHostKeyChecking=no -i "$TOKENAWS" ec2-user@3.90.168.166 " sudo dnf update; sudo dnf install git -y; sudo dnf install -y httpd; sudo systemctl start httpd; sudo rm -Rf /var/www/html/; sudo git clone https://github.com/Cluster0410/FinalExamDevops2.2 /var/www/html"'
+            }
+        }
+        stage('Deploy to Production_Env2'){
+            steps{
+            sh 'ssh -T -oStrictHostKeyChecking=no -i "$TOKENAWS" ec2-user@44.200.108.228 " sudo dnf update; sudo dnf install git -y; sudo dnf install -y httpd; sudo systemctl start httpd; sudo rm -Rf /var/www/html/; sudo git clone https://github.com/Cluster0410/FinalExamDevops2.2 /var/www/html"'
+            }
+        }
+     
+    }
+}
